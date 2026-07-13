@@ -84,6 +84,10 @@
   #login p{color:var(--muted);font-size:13px;margin:0 0 16px;line-height:1.5}
   #login input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px;margin-bottom:8px;text-align:center}
   #login .err{color:var(--accent);font-size:13px;min-height:18px;margin-bottom:8px}
+  #scan{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:110;padding:16px}
+  #scan video{width:100%;max-width:520px;border-radius:12px;background:#111}
+  #scan .scanmsg{color:#fff;margin:14px 0;font-size:14px;text-align:center;max-width:520px}
+  #scan .btn{max-width:300px}
   @media print{header,.tabbar,.noprint,#login{display:none!important}.wrap{padding:0}}
 </style>
 </head>
@@ -169,7 +173,8 @@
       <input type="text" id="ddt" placeholder="Es. DDT 12345 / PO 67890">
       <label class="f">SSCC / Rif. pallet / articolo <span id="rifTag" style="color:var(--ok);font-weight:700"></span></label>
       <input type="text" id="rif" placeholder="Es. (00)3401234... / ID pallet / cod. articolo">
-      <label class="f">Vettore <span class="req">*</span></label>
+      <button class="btn sec" type="button" style="margin-top:8px" onclick="scanSSCC()">📷 Scansiona SSCC (barcode)</button>
+      <label class="f">Vettore <span class="req">*</span> <span id="vetTag" style="color:var(--ok);font-weight:700"></span></label>
       <input type="text" id="vettore" placeholder="Vettore / targa (obbligatorio)">
       <label class="f">Fornitore</label>
       <input type="text" id="fornitore" placeholder="Es. Fornitore XYZ">
@@ -238,6 +243,13 @@
     <div class="err" id="loginErr"></div>
     <button class="btn" onclick="tryLogin()">Entra</button>
   </div>
+</div>
+
+<!-- Scanner barcode SSCC -->
+<div id="scan" class="hidden">
+  <video id="scanVideo" playsinline muted></video>
+  <div class="scanmsg" id="scanMsg">Inquadra il codice a barre SSCC…</div>
+  <button class="btn sec" onclick="stopScan()">Chiudi</button>
 </div>
 
 <div id="overlay" class="overlay hidden"><div class="box"><div class="spin"></div><div id="overlayMsg">Attendere…</div></div></div>
@@ -343,7 +355,7 @@ function setStep(n){
   [].slice.call(document.querySelectorAll(".step")).forEach(function(el){ el.classList.toggle("hidden", +el.getAttribute("data-step")!==n); });
   [].slice.call(document.querySelectorAll(".steps .s")).forEach(function(el){
     var s=+el.getAttribute("data-s"); el.classList.toggle("done",s<n); el.classList.toggle("cur",s===n); });
-  if(n===4){ buildReview("review"); if(!ocrDone && (state.dnPhotos.length||state.labelPhotos.length) && (!val("ddt")||!val("rif"))) runOCR(true); }
+  if(n===4){ buildReview("review"); if(!ocrDone && (state.dnPhotos.length||state.labelPhotos.length) && (!val("ddt")||!val("rif")||!val("vettore"))) runOCR(true); }
   if(n===5){ buildReview("review2"); prebuildDocx(); }
   window.scrollTo(0,0);
 }
@@ -374,13 +386,48 @@ function runOCR(auto){
       var sscc=(digits.match(/\(00\)\s*([0-9]{18})/)||digits.match(/\b([0-9]{18})\b/)||up.match(/\b([0-9]{18})\b/));
       var ddt=(digits.match(/(?:DDT|D\.?D\.?T|BOLLA|DOCUMENTO)\D{0,8}([0-9]{3,})/)||up.match(/(?:DDT|BOLLA)\D{0,8}([0-9]{3,})/));
       var got=[];
-      var rifEl=document.getElementById("rif"), ddtEl=document.getElementById("ddt");
+      var rifEl=document.getElementById("rif"), ddtEl=document.getElementById("ddt"), vetEl=document.getElementById("vettore");
       if(sscc && !rifEl.value){ rifEl.value="(00)"+sscc[1]; state.rif=rifEl.value; document.getElementById("rifTag").textContent="✓ da foto"; got.push("SSCC"); }
       if(ddt && !ddtEl.value){ ddtEl.value=ddt[1]; state.ddt=ddtEl.value; document.getElementById("ddtTag").textContent="✓ da foto"; got.push("DDT"); }
-      st.textContent = got.length ? ("Letto da foto: "+got.join(", ")+" — verifica il valore.") : "DDT/SSCC non riconosciuti automaticamente: inserisci manualmente.";
+      var vet=text.match(/(?:VETTORE|TRASPORTATORE|CORRIERE|SPEDIZIONIER\w*|TRASPORTO\s+A\s+MEZZO|MEZZO\s+DI\s+TRASPORTO)\s*[:\-]?\s*([A-Za-zÀ-ÿ0-9&.'\/ ]{2,40})/i);
+      if(vet && !vetEl.value){ var vv=vet[1].replace(/\s{2,}/g," ").trim().replace(/[\-:;,.]+$/,""); if(vv){ vetEl.value=vv; state.vettore=vv; document.getElementById("vetTag").textContent="✓ da bolla"; got.push("Vettore"); } }
+      st.textContent = got.length ? ("Letto da foto: "+got.join(", ")+" — verifica i valori.") : "Dati non riconosciuti automaticamente: inserisci manualmente.";
       ocrDone=true; buildReview("review");
     }catch(e){ st.textContent="Lettura da foto non disponibile ora: inserisci DDT/SSCC manualmente."; }
   })();
+}
+
+/* ===== Scanner barcode SSCC (GS1-128) ===== */
+var _zxReader=null;
+function extractSSCC(txt){
+  var raw=(txt||""); var m=raw.match(/00(\d{18})(?!\d)/); if(m) return m[1];
+  var d=raw.replace(/[^0-9]/g,""); if(d.length>=20 && d.slice(0,2)==="00") return d.slice(2,20);
+  if(d.length===18) return d; return null;
+}
+function scanSSCC(){
+  var modal=document.getElementById("scan"), msg=document.getElementById("scanMsg"), video=document.getElementById("scanVideo");
+  modal.classList.remove("hidden"); msg.textContent="Avvio fotocamera…";
+  (async function(){
+    try{
+      if(!window.ZXing){ await loadScript("https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"); }
+      _zxReader=new ZXing.BrowserMultiFormatReader();
+      msg.textContent="Inquadra il codice a barre SSCC…";
+      _zxReader.decodeFromConstraints({video:{facingMode:{ideal:"environment"}}}, video, function(result){
+        if(result){
+          var s=extractSSCC(result.getText());
+          if(s){ if(navigator.vibrate) navigator.vibrate(120);
+            var rifEl=document.getElementById("rif"); rifEl.value="(00)"+s; state.rif=rifEl.value;
+            document.getElementById("rifTag").textContent="✓ da barcode"; stopScan(); buildReview("review"); }
+          else { msg.textContent="Letto: "+result.getText()+" — non è un SSCC, riprova."; }
+        }
+      });
+    }catch(e){ msg.textContent="Fotocamera/scanner non disponibile. Chiudi e inserisci a mano."; }
+  })();
+}
+function stopScan(){
+  try{ if(_zxReader) _zxReader.reset(); }catch(e){}
+  _zxReader=null;
+  document.getElementById("scan").classList.add("hidden");
 }
 
 /* ===== Dettatura vocale ===== */
