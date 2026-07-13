@@ -15,6 +15,8 @@
   header{background:var(--barilla);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)}
   header h1{margin:0;font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px}
   header .rid{font-size:12px;opacity:.9;margin-top:3px;font-variant-numeric:tabular-nums}
+  header .auth{font-size:11px;margin-top:3px;opacity:.95}
+  header .auth a{color:#cfe3ff}
   .wrap{max-width:640px;margin:0 auto;padding:14px}
   .steps{display:flex;gap:4px;margin:0 0 14px}
   .steps .s{flex:1;height:6px;border-radius:3px;background:var(--line)}
@@ -23,7 +25,8 @@
   .card h2{margin:0 0 4px;font-size:16px;color:var(--barilla)}
   .card p.hint{margin:0 0 14px;color:var(--muted);font-size:13px}
   label.f{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 5px}
-  input[type=text],textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:var(--txt)}
+  input[type=text],input[type=email],textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:var(--txt)}
+  input[readonly]{background:#f4f6f9;color:var(--muted)}
   textarea{min-height:120px;resize:vertical}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;background:var(--barilla);color:#fff}
   .btn:active{transform:translateY(1px)}
@@ -73,13 +76,20 @@
   .overlay .box{background:#fff;border-radius:14px;padding:22px 26px;text-align:center;font-weight:600;color:var(--barilla);max-width:80%}
   .spin{width:34px;height:34px;border:4px solid #dce7f2;border-top-color:var(--barilla);border-radius:50%;margin:0 auto 12px;animation:sp 1s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
-  @media print{header,.tabbar,.noprint{display:none!important}.wrap{padding:0}}
+  #login{position:fixed;inset:0;background:var(--barilla);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+  #login .lbox{background:#fff;border-radius:16px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+  #login h2{color:var(--barilla);margin:6px 0 6px;font-size:19px}
+  #login p{color:var(--muted);font-size:13px;margin:0 0 16px;line-height:1.5}
+  #login input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px;margin-bottom:8px;text-align:center}
+  #login .err{color:var(--accent);font-size:13px;min-height:18px;margin-bottom:8px}
+  @media print{header,.tabbar,.noprint,#login{display:none!important}.wrap{padding:0}}
 </style>
 </head>
 <body>
 <header>
   <h1>🟥 Receiving · Segnalazione Problemi</h1>
   <div class="rid" id="ridLabel">—</div>
+  <div class="auth" id="authChip"></div>
 </header>
 
 <div class="wrap">
@@ -155,8 +165,8 @@
       <input type="text" id="fornitore" placeholder="Es. Fornitore XYZ">
       <label class="f">Vettore (opzionale)</label>
       <input type="text" id="vettore" placeholder="Es. vettore / targa">
-      <label class="f">Operatore</label>
-      <input type="text" id="operatore" placeholder="Nome operatore">
+      <label class="f">Operatore (account Futura)</label>
+      <input type="text" id="operatore" placeholder="nome@futurasl.com" readonly>
 
       <div class="review" style="margin-top:16px">
         <label class="f">Riepilogo</label>
@@ -210,12 +220,25 @@
   <button id="btab-qr" onclick="showTab('qr')"><span>🔳</span>QR avvio</button>
 </div>
 
+<!-- Gate accesso @futurasl.com -->
+<div id="login">
+  <div class="lbox">
+    <div style="font-size:34px">🔒</div>
+    <h2>Accesso riservato</h2>
+    <p>Inserisci il tuo indirizzo email aziendale <b>@futurasl.com</b> per usare l'app e inviare le segnalazioni.</p>
+    <input type="email" id="loginEmail" placeholder="nome@futurasl.com" autocomplete="email" inputmode="email">
+    <div class="err" id="loginErr"></div>
+    <button class="btn" onclick="tryLogin()">Entra</button>
+  </div>
+</div>
+
 <div id="overlay" class="overlay hidden"><div class="box"><div class="spin"></div><div id="overlayMsg">Attendere…</div></div></div>
 
 <script>
 /* ===== Configurazione destinatari ===== */
-var TO  = ["Maurizio.Giugovaz@barilla.com","caterina.iannuzziello@barilla.com","cristian.quarantelli@barilla.com"];
-var CC  = ["andrea.bruniera@futurasl.com"];
+/* TEST: destinatari Barilla temporaneamente sostituiti. Ripristinare prima della messa in produzione. */
+var TO  = ["tommaso.dalessandro_ext@futurasl.com"];
+var CC  = ["andrea.bruniera@futurasl.com","matteo.fiori@futurasl.com"];
 
 var PROBLEM_TYPES = ["Pallet danneggiato","Colli danneggiati","Materiale non conforme","Etichettatura errata/mancante",
   "Prodotto sfuso / da ricontare","Pallet instabile (sicurezza)","Discrepanza quantità","Pallet ricombinato errato","Altro"];
@@ -224,6 +247,30 @@ var PROBLEM_TYPES = ["Pallet danneggiato","Colli danneggiati","Materiale non con
 var state = {rid:"", ts:"", labelPhotos:[], pkgPhotos:[], types:[], sev:"", desc:"",
              fornitore:"", ddt:"", rif:"", vettore:"", operatore:""};
 var lastDocx=null, ocrDone=false;
+
+/* ===== Autorizzazione utenti @futurasl.com ===== */
+var AUTHKEY="authUserFutura", authEmail="";
+var AUTH_RE=/^[a-z0-9._%+\-]+@futurasl\.com$/i;
+function showLogin(){ document.getElementById("login").style.display="flex"; }
+function hideLogin(){ document.getElementById("login").style.display="none"; }
+function initAuth(){
+  try{ authEmail=localStorage.getItem(AUTHKEY)||""; }catch(e){ authEmail=""; }
+  if(AUTH_RE.test(authEmail)){ applyAuth(); } else { authEmail=""; showLogin(); }
+}
+function applyAuth(){
+  hideLogin();
+  document.getElementById("authChip").innerHTML="👤 "+authEmail+' · <a href="#" onclick="logout();return false;">cambia</a>';
+  var op=document.getElementById("operatore"); op.value=authEmail; state.operatore=authEmail;
+}
+function tryLogin(){
+  var v=document.getElementById("loginEmail").value.trim().toLowerCase();
+  var err=document.getElementById("loginErr");
+  if(!AUTH_RE.test(v)){ err.textContent="Inserisci un indirizzo valido @futurasl.com"; return; }
+  authEmail=v; try{ localStorage.setItem(AUTHKEY,v); }catch(e){}
+  err.textContent=""; applyAuth();
+}
+function logout(){ authEmail=""; try{ localStorage.removeItem(AUTHKEY); }catch(e){} document.getElementById("loginEmail").value=""; showLogin(); }
+function requireAuth(){ if(AUTH_RE.test(authEmail)) return true; alert("Accesso riservato agli utenti @futurasl.com. Effettua l'accesso."); showLogin(); return false; }
 
 /* ===== Util ===== */
 function pad(n){return (n<10?"0":"")+n;}
@@ -307,7 +354,7 @@ function runOCR(auto){
         var r=await Tesseract.recognize(state.labelPhotos[i].data,"eng");
         text+=" "+(r&&r.data?r.data.text:"");
       }
-      var up=text.toUpperCase().replace(/[OIl]/g,function(m){return m==="O"?"0":"1";}); // O->0, I/l->1 sui codici
+      var up=text.toUpperCase().replace(/[OIl]/g,function(m){return m==="O"?"0":"1";});
       var digits=text.toUpperCase();
       var sscc=(digits.match(/\(00\)\s*([0-9]{18})/)||digits.match(/\b([0-9]{18})\b/)||up.match(/\b([0-9]{18})\b/));
       var ddt=(digits.match(/(?:DDT|D\.?D\.?T|BOLLA|DOCUMENTO)\D{0,8}([0-9]{3,})/)||up.match(/(?:DDT|BOLLA)\D{0,8}([0-9]{3,})/));
@@ -338,7 +385,7 @@ function runOCR(auto){
 /* ===== Riepilogo ===== */
 function pullFields(){
   state.fornitore=val("fornitore"); state.ddt=val("ddt"); state.rif=val("rif");
-  state.vettore=val("vettore"); state.operatore=val("operatore"); state.desc=val("desc");
+  state.vettore=val("vettore"); state.operatore=val("operatore")||authEmail; state.desc=val("desc");
 }
 function buildReview(target){
   pullFields();
@@ -366,7 +413,7 @@ function buildBody(withRecip){
   L.push("Tipo problema: "+(state.types.join(", ")||"-"));
   L.push("Gravità: "+(state.sev||"-"));
   L.push("Vettore: "+(state.vettore||"-"));
-  L.push("Operatore: "+(state.operatore||"-"));
+  L.push("Operatore (account Futura): "+(state.operatore||"-"));
   L.push("");
   L.push("Descrizione:");
   L.push(state.desc||"-");
@@ -404,7 +451,7 @@ async function buildDocx(){
   body+=para("N° "+state.rid+"   ·   "+state.ts,{bold:1,size:22});
   [["DDT / Ordine",state.ddt],["SSCC / Rif.",state.rif],["Fornitore",state.fornitore],
    ["Tipo problema",state.types.join(", ")],["Gravità",state.sev],["Vettore",state.vettore],
-   ["Operatore",state.operatore]].forEach(function(r){ body+=para(r[0]+": "+(r[1]||"-"),{}); });
+   ["Operatore (account Futura)",state.operatore]].forEach(function(r){ body+=para(r[0]+": "+(r[1]||"-"),{}); });
   body+=para("Descrizione:",{bold:1,size:22}); body+=para(state.desc||"-",{});
   var rels="", id=0;
   async function addGroup(title,arr){
@@ -440,29 +487,33 @@ async function buildDocx(){
 
 /* ===== Invio ===== */
 async function prepareAndShare(){
+  if(!requireAuth()) return;
   pullFields(); saveLog();
   busy(true,"Preparo il documento Word con le foto…");
   try{ lastDocx=await buildDocx(); }catch(e){ busy(false); alert("Errore nella creazione del Word. Uso l'email semplice."); openMailtoOnly(); return; }
   busy(false);
   var fname=state.rid+".docx";
   var file=new File([lastDocx],fname,{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
-  if(navigator.canShare && navigator.canShare({files:[file]})){
+  // Tenta sempre la condivisione con allegato (canShare è solo un suggerimento e su alcuni telefoni è troppo restrittivo)
+  if(navigator.share){
     try{ await navigator.share({title:subjectLine(), text:buildBody(true), files:[file]}); return; }
     catch(e){ if(e && e.name==="AbortError") return; }
   }
-  // Fallback: scarica il Word e apre l'email con destinatari precompilati
   downloadBlob(lastDocx,fname);
+  alert("Il telefono non supporta l'allegato automatico. Ho scaricato il Word ("+fname+"): allegalo dall'email (cartella Download).");
   var url="mailto:"+encodeURIComponent(TO.join(","))+"?cc="+encodeURIComponent(CC.join(","))
     +"&subject="+encodeURIComponent(subjectLine())+"&body="+encodeURIComponent(buildBody(false)+"\n\n[Allega il file "+fname+" appena scaricato]");
   setTimeout(function(){ window.location.href=url; },700);
 }
 function openMailtoOnly(){
+  if(!requireAuth()) return;
   pullFields(); saveLog();
   var url="mailto:"+encodeURIComponent(TO.join(","))+"?cc="+encodeURIComponent(CC.join(","))
     +"&subject="+encodeURIComponent(subjectLine())+"&body="+encodeURIComponent(buildBody(false));
   window.location.href=url;
 }
 async function downloadDocxOnly(){
+  if(!requireAuth()) return;
   pullFields(); saveLog(); busy(true,"Preparo il documento Word…");
   try{ lastDocx=await buildDocx(); busy(false); downloadBlob(lastDocx,state.rid+".docx"); }
   catch(e){ busy(false); alert("Errore nella creazione del Word."); }
@@ -486,7 +537,7 @@ function renderLog(){
   var col={"Bassa":"var(--ok)","Media":"var(--warn)","Alta":"var(--accent)"};
   box.innerHTML=log.map(function(r){
     return '<div class="log-item"><div class="id">'+r.rid+'</div>'
-      +'<div class="meta">'+r.ts+' · '+(r.fornitore||"fornitore n.d.")+(r.ddt?" · DDT "+r.ddt:"")+'</div>'
+      +'<div class="meta">'+r.ts+' · '+(r.fornitore||"fornitore n.d.")+(r.ddt?" · DDT "+r.ddt:"")+(r.operatore?" · "+r.operatore:"")+'</div>'
       +(r.sev?'<span class="sv" style="background:'+(col[r.sev]||"#888")+'">'+r.sev+'</span> ':'')
       +(r.types&&r.types.length?'<span style="font-size:13px">'+r.types.join(", ")+'</span>':'')
       +(r.desc?'<div style="font-size:13px;margin-top:6px;color:var(--muted)">'+r.desc+'</div>':'')
@@ -509,7 +560,8 @@ function clearLog(){ if(confirm("Svuotare tutto il registro su questo dispositiv
 /* ===== Reset ===== */
 function resetAll(){
   state.labelPhotos.length=0; state.pkgPhotos.length=0; state.types=[]; state.sev=""; state.desc=""; lastDocx=null; ocrDone=false;
-  ["fornitore","ddt","rif","vettore","operatore","desc"].forEach(function(id){document.getElementById(id).value="";});
+  ["fornitore","ddt","rif","vettore","desc"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("operatore").value=authEmail; state.operatore=authEmail;
   document.getElementById("thLabel").innerHTML=""; document.getElementById("thPkg").innerHTML="";
   document.getElementById("cLabel").textContent="0 foto"; document.getElementById("cPkg").textContent="0 foto";
   document.getElementById("ddtTag").textContent=""; document.getElementById("rifTag").textContent="";
@@ -547,7 +599,8 @@ function makeQR(){
 }
 
 /* ===== Avvio ===== */
-genRID(); setStep(1);
+document.getElementById("loginEmail").addEventListener("keydown",function(e){ if(e.key==="Enter") tryLogin(); });
+genRID(); setStep(1); initAuth();
 </script>
 </body>
 </html>
