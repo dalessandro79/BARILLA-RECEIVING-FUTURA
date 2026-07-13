@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a3d62">
+<title>Receiving · Segnalazione Problemi</title>
+<style>
+  :root{
+    --barilla:#0a3d62; --barilla2:#1e5f8c; --accent:#c8102e;
+    --ok:#2e7d32; --warn:#f39c12; --bg:#f2f4f7; --card:#fff; --line:#dce1e8; --txt:#1b2733; --muted:#6b7784;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:16px;line-height:1.4}
+  header{background:var(--barilla);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+  header h1{margin:0;font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px}
+  header .rid{font-size:12px;opacity:.9;margin-top:3px;font-variant-numeric:tabular-nums}
+  .wrap{max-width:640px;margin:0 auto;padding:14px}
+  .steps{display:flex;gap:4px;margin:0 0 14px}
+  .steps .s{flex:1;height:6px;border-radius:3px;background:var(--line)}
+  .steps .s.done{background:var(--ok)} .steps .s.cur{background:var(--barilla2)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card h2{margin:0 0 4px;font-size:16px;color:var(--barilla)}
+  .card p.hint{margin:0 0 14px;color:var(--muted);font-size:13px}
+  label.f{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 5px}
+  input[type=text],textarea,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;font-family:inherit;background:#fff;color:var(--txt)}
+  textarea{min-height:120px;resize:vertical}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;background:var(--barilla);color:#fff}
+  .btn:active{transform:translateY(1px)}
+  .btn.sec{background:#eef1f5;color:var(--barilla)}
+  .btn.accent{background:var(--accent)}
+  .btn.grn{background:var(--ok)}
+  .btn:disabled{opacity:.5}
+  .row{display:flex;gap:10px;margin-top:14px}
+  .row .btn{width:auto;flex:1}
+  .cam{display:flex;flex-direction:column;gap:10px}
+  .capbtn{border:2px dashed var(--barilla2);background:#f7fbff;color:var(--barilla);border-radius:12px;padding:18px;text-align:center;font-weight:600;cursor:pointer}
+  input[type=file]{display:none}
+  .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .thumb{position:relative;width:76px;height:76px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb b{position:absolute;top:2px;right:2px;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .count{font-size:12px;color:var(--muted);margin-top:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{border:1px solid var(--line);border-radius:20px;padding:8px 13px;font-size:14px;cursor:pointer;background:#fff;user-select:none}
+  .chip.on{background:var(--barilla);color:#fff;border-color:var(--barilla)}
+  .sev{display:flex;gap:8px;margin-top:6px}
+  .sev .chip{flex:1;text-align:center}
+  .sev .chip.on.b{background:var(--ok);border-color:var(--ok)}
+  .sev .chip.on.m{background:var(--warn);border-color:var(--warn)}
+  .sev .chip.on.a{background:var(--accent);border-color:var(--accent)}
+  .mic{margin-top:8px}
+  .mic.rec{background:var(--accent);color:#fff;animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{opacity:.55}}
+  .review dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+  .review dt{color:var(--muted);font-weight:600}
+  .review dd{margin:0;word-break:break-word}
+  .banner{background:#fff7e6;border:1px solid var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;color:#8a5b00}
+  .tabbar{display:flex;border-top:1px solid var(--line);background:#fff;position:sticky;bottom:0}
+  .tabbar button{flex:1;background:none;border:none;padding:11px 4px;font-size:11px;color:var(--muted);cursor:pointer;font-weight:600}
+  .tabbar button.on{color:var(--barilla)}
+  .tabbar button span{display:block;font-size:19px;line-height:1}
+  .hidden{display:none!important}
+  .log-item{border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:9px}
+  .log-item .id{font-weight:700;color:var(--barilla);font-size:14px;font-variant-numeric:tabular-nums}
+  .log-item .meta{font-size:12px;color:var(--muted);margin:3px 0 8px}
+  .log-item .sv{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;color:#fff}
+  .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
+  .qrbox{display:flex;justify-content:center;padding:16px;background:#fff;border-radius:12px;margin-top:12px}
+  @media print{header,.tabbar,.noprint{display:none!important}.wrap{padding:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🟥 Receiving · Segnalazione Problemi</h1>
+  <div class="rid" id="ridLabel">—</div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ TAB: NUOVA SEGNALAZIONE ============ -->
+  <section id="tab-new">
+    <div class="steps">
+      <div class="s" data-s="1"></div><div class="s" data-s="2"></div>
+      <div class="s" data-s="3"></div><div class="s" data-s="4"></div><div class="s" data-s="5"></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="card step" data-step="1">
+      <h2>1 · Foto etichetta/e</h2>
+      <p class="hint">Fotografa le etichette del/i collo/i (SSCC, lotto, articolo, DDT).</p>
+      <div class="cam">
+        <label class="capbtn" for="inLabel">📷 Scatta / aggiungi foto etichetta</label>
+        <input type="file" id="inLabel" accept="image/*" capture="environment" multiple>
+        <div class="thumbs" id="thLabel"></div>
+        <div class="count" id="cLabel">0 foto</div>
+      </div>
+      <div class="row"><button class="btn" onclick="next(1)">Avanti →</button></div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="card step hidden" data-step="2">
+      <h2>2 · Foto collo / colli</h2>
+      <p class="hint">Fotografa il collo o i colli interessati e il difetto riscontrato.</p>
+      <div class="cam">
+        <label class="capbtn" for="inPkg">📦 Scatta / aggiungi foto collo</label>
+        <input type="file" id="inPkg" accept="image/*" capture="environment" multiple>
+        <div class="thumbs" id="thPkg"></div>
+        <div class="count" id="cPkg">0 foto</div>
+      </div>
+      <div class="row"><button class="btn sec" onclick="prev(2)">← Indietro</button><button class="btn" onclick="next(2)">Avanti →</button></div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="card step hidden" data-step="3">
+      <h2>3 · Descrizione problema</h2>
+      <p class="hint">Seleziona il tipo, scrivi o detta la descrizione.</p>
+
+      <label class="f">Tipo di problema</label>
+      <div class="chips" id="types"></div>
+
+      <label class="f">Gravità</label>
+      <div class="sev" id="sev">
+        <div class="chip b" data-sev="Bassa">Bassa</div>
+        <div class="chip m" data-sev="Media">Media</div>
+        <div class="chip a" data-sev="Alta">Alta</div>
+      </div>
+
+      <label class="f">Descrizione</label>
+      <textarea id="desc" placeholder="Descrivi il problema, quantità colli/pallet interessati, riferimenti…"></textarea>
+      <button class="btn sec mic" id="micBtn" type="button">🎙️ Detta descrizione (vocale)</button>
+
+      <div class="row"><button class="btn sec" onclick="prev(3)">← Indietro</button><button class="btn" onclick="next(3)">Avanti →</button></div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="card step hidden" data-step="4">
+      <h2>4 · Preparazione segnalazione</h2>
+      <p class="hint">Dati opzionali dal DDT/etichetta. Poi rivedi il riepilogo.</p>
+
+      <label class="f">Fornitore</label>
+      <input type="text" id="fornitore" placeholder="Es. Fornitore XYZ">
+      <label class="f">DDT / Ordine</label>
+      <input type="text" id="ddt" placeholder="Es. DDT 12345 / PO 67890">
+      <label class="f">Rif. pallet / SSCC / articolo</label>
+      <input type="text" id="rif" placeholder="Es. SSCC / ID pallet / cod. articolo">
+      <label class="f">Vettore (opzionale)</label>
+      <input type="text" id="vettore" placeholder="Es. vettore / targa">
+      <label class="f">Operatore</label>
+      <input type="text" id="operatore" placeholder="Nome operatore">
+
+      <div class="review" style="margin-top:16px">
+        <label class="f">Riepilogo</label>
+        <dl id="review"></dl>
+      </div>
+      <div class="row"><button class="btn sec" onclick="prev(4)">← Indietro</button><button class="btn" onclick="next(4)">Rivedi e invia →</button></div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="card step hidden" data-step="5">
+      <h2>5 · Conferma e invio</h2>
+      <p class="hint">Verifica i destinatari, poi conferma per aprire l'email precompilata.</p>
+      <div class="review"><dl id="review2"></dl></div>
+      <div class="banner">⚠️ Le foto <b>non</b> si allegano da sole all'email. Usa <b>“Scarica foto”</b>, poi allegale nel client di posta prima di inviare.</div>
+      <div class="row"><button class="btn sec" onclick="downloadPhotos()">⬇️ Scarica foto</button></div>
+      <div class="row"><button class="btn grn" onclick="confirmSend()">✅ Conferma e apri email</button></div>
+      <div class="row"><button class="btn sec" onclick="prev(5)">← Indietro</button><button class="btn sec" onclick="resetAll()">Nuova</button></div>
+    </div>
+  </section>
+
+  <!-- ============ TAB: LOGBOOK ============ -->
+  <section id="tab-log" class="hidden">
+    <div class="card">
+      <h2>Registro segnalazioni</h2>
+      <p class="hint">Tutte le segnalazioni tracciate su questo dispositivo.</p>
+      <div class="row noprint">
+        <button class="btn sec" onclick="exportCSV()">⬇️ Esporta CSV</button>
+        <button class="btn sec" onclick="clearLog()">🗑 Svuota</button>
+      </div>
+    </div>
+    <div id="logList"></div>
+  </section>
+
+  <!-- ============ TAB: QR AVVIO ============ -->
+  <section id="tab-qr" class="hidden">
+    <div class="card">
+      <h2>QR di avvio postazione</h2>
+      <p class="hint">Inserisci l'indirizzo (URL) dove è pubblicata questa app, genera il QR, stampalo e affiggilo in banchina. Scansionandolo si apre direttamente l'app.</p>
+      <label class="f">URL dell'app</label>
+      <input type="text" id="appUrl" placeholder="https://…/receiving-segnalazioni.html">
+      <div class="row noprint"><button class="btn" onclick="makeQR()">Genera QR</button></div>
+      <div id="qrOut"></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="tabbar">
+  <button id="btab-new" class="on" onclick="showTab('new')"><span>➕</span>Nuova</button>
+  <button id="btab-log" onclick="showTab('log')"><span>📋</span>Registro</button>
+  <button id="btab-qr" onclick="showTab('qr')"><span>🔳</span>QR avvio</button>
+</div>
+
+<script>
+/* ---------- Configurazione destinatari ---------- */
+var TO  = ["Maurizio.Giugovaz@barilla.com","caterina.iannuzziello@barilla.com","cristian.quarantelli@barilla.com"];
+var CC  = ["andrea.bruniera@futurasl.com"];
+
+var PROBLEM_TYPES = ["Pallet danneggiato","Colli danneggiati","Materiale non conforme","Etichettatura errata/mancante",
+  "Prodotto sfuso / da ricontare","Pallet instabile (sicurezza)","Discrepanza quantità","Pallet ricombinato errato","Altro"];
+
+/* ---------- Stato ---------- */
+var state = {rid:"", ts:"", labelPhotos:[], pkgPhotos:[], types:[], sev:"", desc:"",
+             fornitore:"", ddt:"", rif:"", vettore:"", operatore:""};
+var curStep = 1;
+
+/* ---------- Numero progressivo AAAAMMGG-HHMMSS ---------- */
+function pad(n){return (n<10?"0":"")+n;}
+function genRID(){
+  var d=new Date();
+  var stamp=""+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-"+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());
+  state.rid="RCV-"+stamp;
+  state.ts=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());
+  document.getElementById("ridLabel").textContent="N° "+state.rid;
+}
+
+/* ---------- Chips tipo problema ---------- */
+(function(){
+  var c=document.getElementById("types");
+  PROBLEM_TYPES.forEach(function(t){
+    var el=document.createElement("div"); el.className="chip"; el.textContent=t;
+    el.onclick=function(){ el.classList.toggle("on");
+      state.types = [].slice.call(c.querySelectorAll(".chip.on")).map(function(x){return x.textContent;});
+    };
+    c.appendChild(el);
+  });
+  var sev=document.getElementById("sev");
+  [].slice.call(sev.children).forEach(function(el){
+    el.onclick=function(){ [].slice.call(sev.children).forEach(function(x){x.classList.remove("on");});
+      el.classList.add("on"); state.sev=el.getAttribute("data-sev"); };
+  });
+})();
+
+/* ---------- Foto ---------- */
+function bindPhotos(inputId, thumbsId, countId, arr){
+  var input=document.getElementById(inputId), th=document.getElementById(thumbsId), c=document.getElementById(countId);
+  input.addEventListener("change", function(){
+    [].slice.call(input.files).forEach(function(file){
+      var r=new FileReader();
+      r.onload=function(e){ arr.push({name:file.name,data:e.target.result}); render(); };
+      r.readAsDataURL(file);
+    });
+    input.value="";
+  });
+  function render(){
+    th.innerHTML="";
+    arr.forEach(function(p,i){
+      var d=document.createElement("div"); d.className="thumb";
+      d.innerHTML='<img src="'+p.data+'"><b>&times;</b>';
+      d.querySelector("b").onclick=function(){ arr.splice(i,1); render(); };
+      th.appendChild(d);
+    });
+    c.textContent=arr.length+" foto";
+  }
+}
+bindPhotos("inLabel","thLabel","cLabel",state.labelPhotos);
+bindPhotos("inPkg","thPkg","cPkg",state.pkgPhotos);
+
+/* ---------- Navigazione step ---------- */
+function setStep(n){
+  curStep=n;
+  [].slice.call(document.querySelectorAll(".step")).forEach(function(el){
+    el.classList.toggle("hidden", +el.getAttribute("data-step")!==n);
+  });
+  [].slice.call(document.querySelectorAll(".steps .s")).forEach(function(el){
+    var s=+el.getAttribute("data-s"); el.classList.toggle("done",s<n); el.classList.toggle("cur",s===n);
+  });
+  if(n===4) buildReview("review");
+  if(n===5) buildReview("review2");
+  window.scrollTo(0,0);
+}
+function next(from){ if(from===3 && state.types.length===0){ if(!confirm("Nessun tipo di problema selezionato. Continuare?")) return; } setStep(from+1); }
+function prev(from){ setStep(from-1); }
+
+/* ---------- Riepilogo ---------- */
+function pullFields(){
+  state.fornitore=val("fornitore"); state.ddt=val("ddt"); state.rif=val("rif");
+  state.vettore=val("vettore"); state.operatore=val("operatore"); state.desc=val("desc");
+}
+function val(id){return document.getElementById(id).value.trim();}
+function buildReview(target){
+  pullFields();
+  var dl=document.getElementById(target); dl.innerHTML="";
+  var rows=[["N° progressivo",state.rid],["Data/ora",state.ts],["Fornitore",state.fornitore||"—"],
+    ["DDT/Ordine",state.ddt||"—"],["Rif. pallet/SSCC",state.rif||"—"],["Tipo problema",state.types.join(", ")||"—"],
+    ["Gravità",state.sev||"—"],["Descrizione",state.desc||"—"],["Vettore",state.vettore||"—"],
+    ["Operatore",state.operatore||"—"],["Foto etichette",state.labelPhotos.length],["Foto colli",state.pkgPhotos.length]];
+  if(target==="review2") rows.push(["A (TO)",TO.join(", ")],["CC",CC.join(", ")]);
+  rows.forEach(function(r){ var dt=document.createElement("dt"),dd=document.createElement("dd");
+    dt.textContent=r[0]; dd.textContent=r[1]; dl.appendChild(dt); dl.appendChild(dd); });
+}
+
+/* ---------- Dettatura vocale ---------- */
+(function(){
+  var btn=document.getElementById("micBtn");
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ btn.disabled=true; btn.textContent="🎙️ Dettatura non supportata su questo browser"; return; }
+  var rec=new SR(); rec.lang="it-IT"; rec.continuous=true; rec.interimResults=false; var on=false;
+  btn.onclick=function(){ if(on){rec.stop();return;} try{rec.start();}catch(e){} };
+  rec.onstart=function(){on=true;btn.classList.add("rec");btn.textContent="⏹️ Sto ascoltando… tocca per fermare";};
+  rec.onend=function(){on=false;btn.classList.remove("rec");btn.textContent="🎙️ Detta descrizione (vocale)";};
+  rec.onerror=function(){on=false;btn.classList.remove("rec");btn.textContent="🎙️ Detta descrizione (vocale)";};
+  rec.onresult=function(e){ var t=document.getElementById("desc");
+    for(var i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal){ t.value+=(t.value?" ":"")+e.results[i][0].transcript.trim(); } } };
+})();
+
+/* ---------- Email + logbook ---------- */
+function buildBody(){
+  var L=[];
+  L.push("Segnalazione problema in receiving.");
+  L.push("");
+  L.push("N° segnalazione: "+state.rid);
+  L.push("Data/ora: "+state.ts);
+  L.push("Fornitore: "+(state.fornitore||"-"));
+  L.push("DDT/Ordine: "+(state.ddt||"-"));
+  L.push("Rif. pallet/SSCC/articolo: "+(state.rif||"-"));
+  L.push("Tipo problema: "+(state.types.join(", ")||"-"));
+  L.push("Gravità: "+(state.sev||"-"));
+  L.push("Vettore: "+(state.vettore||"-"));
+  L.push("Operatore: "+(state.operatore||"-"));
+  L.push("");
+  L.push("Descrizione:");
+  L.push(state.desc||"-");
+  L.push("");
+  L.push("Foto allegate: etichette "+state.labelPhotos.length+", colli "+state.pkgPhotos.length+" (da allegare manualmente).");
+  return L.join("\n");
+}
+function confirmSend(){
+  pullFields();
+  saveLog();
+  var subject="[Receiving] "+state.rid+" - "+(state.sev||"Segnalazione")+" - "+(state.fornitore||"fornitore n.d.");
+  var url="mailto:"+encodeURIComponent(TO.join(","))
+    +"?cc="+encodeURIComponent(CC.join(","))
+    +"&subject="+encodeURIComponent(subject)
+    +"&body="+encodeURIComponent(buildBody());
+  window.location.href=url;
+}
+function downloadPhotos(){
+  var all=state.labelPhotos.map(function(p,i){return {t:"etichetta",i:i+1,p:p};})
+    .concat(state.pkgPhotos.map(function(p,i){return {t:"collo",i:i+1,p:p};}));
+  if(all.length===0){ alert("Nessuna foto da scaricare."); return; }
+  all.forEach(function(o,k){ setTimeout(function(){
+    var a=document.createElement("a"); a.href=o.p.data;
+    a.download=state.rid+"_"+o.t+"_"+o.i+".jpg"; document.body.appendChild(a); a.click(); a.remove();
+  }, k*350); });
+}
+
+/* ---------- Persistenza logbook (localStorage) ---------- */
+var LS="receivingLog_v1";
+function loadLog(){ try{return JSON.parse(localStorage.getItem(LS))||[];}catch(e){return [];} }
+function saveLog(){
+  var log=loadLog();
+  if(log.some(function(r){return r.rid===state.rid;})) { renderLog(); return; }
+  log.unshift({rid:state.rid,ts:state.ts,fornitore:state.fornitore,ddt:state.ddt,rif:state.rif,
+    types:state.types,sev:state.sev,desc:state.desc,vettore:state.vettore,operatore:state.operatore,
+    nLabel:state.labelPhotos.length,nPkg:state.pkgPhotos.length});
+  try{localStorage.setItem(LS,JSON.stringify(log));}catch(e){}
+  renderLog();
+}
+function renderLog(){
+  var log=loadLog(), box=document.getElementById("logList");
+  if(!log.length){ box.innerHTML='<div class="empty">Nessuna segnalazione registrata.</div>'; return; }
+  var col={"Bassa":"var(--ok)","Media":"var(--warn)","Alta":"var(--accent)"};
+  box.innerHTML=log.map(function(r){
+    return '<div class="log-item"><div class="id">'+r.rid+'</div>'
+      +'<div class="meta">'+r.ts+' · '+(r.fornitore||"fornitore n.d.")+(r.ddt?" · "+r.ddt:"")+'</div>'
+      +(r.sev?'<span class="sv" style="background:'+(col[r.sev]||"#888")+'">'+r.sev+'</span> ':'')
+      +(r.types&&r.types.length?'<span style="font-size:13px">'+r.types.join(", ")+'</span>':'')
+      +(r.desc?'<div style="font-size:13px;margin-top:6px;color:var(--muted)">'+r.desc+'</div>':'')
+      +'</div>';
+  }).join("");
+}
+function stampFile(){ var d=new Date();
+  return pad(d.getMonth()+1)+pad(d.getDate())+d.getFullYear()+" "+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds()); }
+function exportCSV(){
+  var log=loadLog(); if(!log.length){ alert("Registro vuoto."); return; }
+  var head=["N_progressivo","DataOra","Fornitore","DDT_Ordine","Rif","TipoProblema","Gravita","Descrizione","Vettore","Operatore","FotoEtichette","FotoColli"];
+  var rows=log.map(function(r){ return [r.rid,r.ts,r.fornitore,r.ddt,r.rif,(r.types||[]).join("; "),r.sev,r.desc,r.vettore,r.operatore,r.nLabel,r.nPkg]
+    .map(function(v){ v=(v==null?"":String(v)).replace(/"/g,'""'); return '"'+v+'"'; }).join(","); });
+  var csv="﻿"+head.join(",")+"\n"+rows.join("\n");
+  var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="registro_segnalazioni "+stampFile()+".csv"; document.body.appendChild(a); a.click(); a.remove();
+}
+function clearLog(){ if(confirm("Svuotare tutto il registro su questo dispositivo?")){ localStorage.removeItem(LS); renderLog(); } }
+
+/* ---------- Reset nuova segnalazione ---------- */
+function resetAll(){
+  state.labelPhotos.length=0; state.pkgPhotos.length=0; state.types=[]; state.sev=""; state.desc="";
+  ["fornitore","ddt","rif","vettore","operatore","desc"].forEach(function(id){document.getElementById(id).value="";});
+  document.getElementById("thLabel").innerHTML=""; document.getElementById("thPkg").innerHTML="";
+  document.getElementById("cLabel").textContent="0 foto"; document.getElementById("cPkg").textContent="0 foto";
+  [].slice.call(document.querySelectorAll("#types .chip,#sev .chip")).forEach(function(x){x.classList.remove("on");});
+  genRID(); setStep(1);
+}
+
+/* ---------- Tabs ---------- */
+function showTab(t){
+  ["new","log","qr"].forEach(function(x){
+    document.getElementById("tab-"+x).classList.toggle("hidden",x!==t);
+    document.getElementById("btab-"+x).classList.toggle("on",x===t);
+  });
+  if(t==="log") renderLog();
+  if(t==="qr" && !document.getElementById("appUrl").value){ document.getElementById("appUrl").value=location.href.split("#")[0]; }
+  window.scrollTo(0,0);
+}
+
+/* ---------- QR di avvio (carica libreria da CDN se online) ---------- */
+function makeQR(){
+  var url=document.getElementById("appUrl").value.trim();
+  var out=document.getElementById("qrOut");
+  if(!url){ alert("Inserisci l'URL dell'app."); return; }
+  out.innerHTML="";
+  function draw(){
+    var box=document.createElement("div"); box.className="qrbox"; out.appendChild(box);
+    try{ new QRCode(box,{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M}); }catch(e){ out.innerHTML='<div class="banner">Impossibile generare il QR offline. Riprova con connessione attiva.</div>'; return; }
+    var cap=document.createElement("p"); cap.className="hint"; cap.style.textAlign="center"; cap.style.marginTop="10px";
+    cap.textContent="Stampa e affiggi in banchina · "+url; out.appendChild(cap);
+    var pb=document.createElement("button"); pb.className="btn sec noprint"; pb.textContent="🖨 Stampa QR"; pb.onclick=function(){window.print();}; out.appendChild(pb);
+  }
+  if(window.QRCode){ draw(); }
+  else{
+    var s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+    s.onload=draw; s.onerror=function(){ out.innerHTML='<div class="banner">Serve connessione per generare il QR la prima volta.</div>'; };
+    document.head.appendChild(s);
+  }
+}
+
+/* ---------- Avvio ---------- */
+genRID(); setStep(1);
+</script>
+</body>
+</html>
