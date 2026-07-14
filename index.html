@@ -32,7 +32,6 @@
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;background:var(--barilla);color:#fff}
   .btn:active{transform:translateY(1px)}
   .btn.sec{background:#eef1f5;color:var(--barilla)}
-  .btn.accent{background:var(--accent)}
   .btn.grn{background:var(--ok)}
   .btn:disabled{opacity:.6}
   .row{display:flex;gap:10px;margin-top:14px}
@@ -78,17 +77,18 @@
   .overlay .box{background:#fff;border-radius:14px;padding:22px 26px;text-align:center;font-weight:600;color:var(--barilla);max-width:80%}
   .spin{width:34px;height:34px;border:4px solid #dce7f2;border-top-color:var(--barilla);border-radius:50%;margin:0 auto 12px;animation:sp 1s linear infinite}
   @keyframes sp{to{transform:rotate(360deg)}}
-  #login{position:fixed;inset:0;background:var(--barilla);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
-  #login .lbox{background:#fff;border-radius:16px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)}
-  #login h2{color:var(--barilla);margin:6px 0 6px;font-size:19px}
-  #login p{color:var(--muted);font-size:13px;margin:0 0 16px;line-height:1.5}
+  #login,#browser{position:fixed;inset:0;background:var(--barilla);display:none;align-items:center;justify-content:center;z-index:100;padding:24px}
+  #login .lbox,#browser .lbox{background:#fff;border-radius:16px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+  #login h2,#browser h2{color:var(--barilla);margin:6px 0 6px;font-size:19px}
+  #login p,#browser p{color:var(--muted);font-size:13px;margin:0 0 14px;line-height:1.5}
   #login input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px;margin-bottom:8px;text-align:center}
   #login .err{color:var(--accent);font-size:13px;min-height:18px;margin-bottom:8px}
+  #browser a.btn{text-decoration:none;margin-top:6px}
   #scan{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:110;padding:16px}
   #scan video{width:100%;max-width:520px;border-radius:12px;background:#111}
   #scan .scanmsg{color:#fff;margin:14px 0;font-size:14px;text-align:center;max-width:520px}
   #scan .btn{max-width:300px}
-  @media print{header,.tabbar,.noprint,#login{display:none!important}.wrap{padding:0}}
+  @media print{header,.tabbar,.noprint,#login,#browser{display:none!important}.wrap{padding:0}}
 </style>
 </head>
 <body>
@@ -106,32 +106,31 @@
       <div class="s" data-s="1"></div><div class="s" data-s="2"></div>
       <div class="s" data-s="3"></div><div class="s" data-s="4"></div><div class="s" data-s="5"></div>
     </div>
+    <button class="btn sec noprint" style="margin-bottom:12px" onclick="saveDraft()">💾 Salva e completa dopo</button>
 
-    <!-- STEP 1 -->
+    <!-- STEP 1: etichette SSCC (banchina) -->
     <div class="card step" data-step="1">
-      <h2>1 · Delivery Note + etichette</h2>
-      <p class="hint">La foto del <b>Delivery Note (DDT)</b> è <span class="req">obbligatoria</span>. Aggiungi anche le etichette dei colli (SSCC, lotto, articolo).</p>
+      <h2>1 · Foto etichette SSCC</h2>
+      <p class="hint">In banchina: fotografa le etichette SSCC dei colli. Foto <span class="req">obbligatoria</span>.</p>
       <div class="cam">
-        <label class="capbtn req-b" for="inDN">📄 Foto Delivery Note (DDT) — obbligatoria</label>
-        <input type="file" id="inDN" accept="image/*" capture="environment" multiple>
-        <div class="thumbs" id="thDN"></div>
-        <div class="count" id="cDN">0 foto</div>
-      </div>
-      <div class="cam" style="margin-top:12px">
-        <label class="capbtn" for="inLabel">🏷️ Foto etichetta/e</label>
+        <label class="capbtn req-b" for="inLabel">🏷️ Foto etichetta SSCC — obbligatoria</label>
         <input type="file" id="inLabel" accept="image/*" capture="environment" multiple>
         <div class="thumbs" id="thLabel"></div>
         <div class="count" id="cLabel">0 foto</div>
       </div>
+      <label class="f">SSCC <span id="rifTag" style="color:var(--ok);font-weight:700"></span></label>
+      <input type="text" id="rif" placeholder="(00) 18 cifre / cod. articolo">
+      <div class="row"><button class="btn sec" type="button" onclick="scanSSCC()">📷 Scansiona SSCC</button><button class="btn sec" type="button" onclick="runOCRsscc()">🔎 Leggi da foto</button></div>
+      <div class="ocrbar" id="ssccStatus" style="margin-top:10px">SSCC: scansiona il barcode o inserisci a mano.</div>
       <div class="row"><button class="btn" onclick="next(1)">Avanti →</button></div>
     </div>
 
-    <!-- STEP 2 -->
+    <!-- STEP 2: pallet -->
     <div class="card step hidden" data-step="2">
-      <h2>2 · Foto collo / colli</h2>
-      <p class="hint">Fotografa il collo o i colli interessati e il difetto riscontrato.</p>
+      <h2>2 · Foto pallet</h2>
+      <p class="hint">Fotografa il/i pallet o collo/i interessati e il difetto riscontrato.</p>
       <div class="cam">
-        <label class="capbtn" for="inPkg">📦 Scatta / aggiungi foto collo</label>
+        <label class="capbtn" for="inPkg">📦 Scatta / aggiungi foto pallet</label>
         <input type="file" id="inPkg" accept="image/*" capture="environment" multiple>
         <div class="thumbs" id="thPkg"></div>
         <div class="count" id="cPkg">0 foto</div>
@@ -139,7 +138,7 @@
       <div class="row"><button class="btn sec" onclick="prev(2)">← Indietro</button><button class="btn" onclick="next(2)">Avanti →</button></div>
     </div>
 
-    <!-- STEP 3 -->
+    <!-- STEP 3: descrizione -->
     <div class="card step hidden" data-step="3">
       <h2>3 · Descrizione problema</h2>
       <p class="hint">Seleziona il tipo, scrivi o detta la descrizione.</p>
@@ -161,21 +160,23 @@
       <div class="row"><button class="btn sec" onclick="prev(3)">← Indietro</button><button class="btn" onclick="next(3)">Avanti →</button></div>
     </div>
 
-    <!-- STEP 4 -->
+    <!-- STEP 4: Delivery Note (ufficio) -->
     <div class="card step hidden" data-step="4">
-      <h2>4 · Preparazione segnalazione</h2>
-      <p class="hint">DDT e SSCC vengono letti dalle foto (se leggibili). Il <b>Vettore</b> è <span class="req">obbligatorio</span>.</p>
+      <h2>4 · Delivery Note (in ufficio)</h2>
+      <p class="hint">In ufficio: fotografa il <b>Delivery Note</b>. Foto <span class="req">obbligatoria</span>. L'app legge N. Delivery Note e Vettore dalla foto.</p>
+      <div class="cam">
+        <label class="capbtn req-b" for="inDN">📄 Foto Delivery Note — obbligatoria</label>
+        <input type="file" id="inDN" accept="image/*" capture="environment" multiple>
+        <div class="thumbs" id="thDN"></div>
+        <div class="count" id="cDN">0 foto</div>
+      </div>
+      <div class="ocrbar" id="dnStatus" style="margin-top:10px">Aggiungi la foto del Delivery Note per la lettura automatica.</div>
+      <button class="btn sec" type="button" onclick="runOCRdn(false)">🔎 Rileggi da Delivery Note</button>
 
-      <div class="ocrbar" id="ocrStatus">DDT/SSCC: in attesa di lettura dalle foto.</div>
-      <button class="btn sec" type="button" onclick="runOCR(false)">🔎 Rileggi DDT/SSCC dalle foto</button>
-
-      <label class="f">DDT / Ordine <span id="ddtTag" style="color:var(--ok);font-weight:700"></span></label>
-      <input type="text" id="ddt" placeholder="Es. DDT 12345 / PO 67890">
-      <label class="f">SSCC / Rif. pallet / articolo <span id="rifTag" style="color:var(--ok);font-weight:700"></span></label>
-      <input type="text" id="rif" placeholder="Es. (00)3401234... / ID pallet / cod. articolo">
-      <button class="btn sec" type="button" style="margin-top:8px" onclick="scanSSCC()">📷 Scansiona SSCC (barcode)</button>
+      <label class="f">N. Delivery Note <span class="req">*</span> <span id="ddtTag" style="color:var(--ok);font-weight:700"></span></label>
+      <input type="text" id="ddt" placeholder="Numero Delivery Note / DDT">
       <label class="f">Vettore <span class="req">*</span> <span id="vetTag" style="color:var(--ok);font-weight:700"></span></label>
-      <input type="text" id="vettore" placeholder="Vettore / targa (obbligatorio)">
+      <input type="text" id="vettore" placeholder="Vettore / corriere">
       <label class="f">Fornitore</label>
       <input type="text" id="fornitore" placeholder="Es. Fornitore XYZ">
       <label class="f">Operatore (account Futura)</label>
@@ -188,7 +189,7 @@
       <div class="row"><button class="btn sec" onclick="prev(4)">← Indietro</button><button class="btn" onclick="next(4)">Rivedi e invia →</button></div>
     </div>
 
-    <!-- STEP 5 -->
+    <!-- STEP 5: invio -->
     <div class="card step hidden" data-step="5">
       <h2>5 · Conferma e invio</h2>
       <p class="hint">Il documento Word con foto e dati è pronto: tocca Invia per allegarlo all'email.</p>
@@ -198,6 +199,15 @@
       <div class="row"><button class="btn sec" onclick="openMailtoOnly()">✉️ Email senza allegato</button><button class="btn sec" onclick="downloadDocxOnly()">⬇️ Solo Word</button></div>
       <div class="row"><button class="btn sec" onclick="prev(5)">← Indietro</button><button class="btn sec" onclick="resetAll()">Nuova</button></div>
     </div>
+  </section>
+
+  <!-- ============ TAB: BOZZE ============ -->
+  <section id="tab-draft" class="hidden">
+    <div class="card">
+      <h2>Bozze da completare</h2>
+      <p class="hint">Segnalazioni salvate e <b>non ancora inviate</b> su questo dispositivo. Riprendile quando vuoi.</p>
+    </div>
+    <div id="draftList"></div>
   </section>
 
   <!-- ============ TAB: LOGBOOK ============ -->
@@ -229,8 +239,21 @@
 
 <div class="tabbar">
   <button id="btab-new" class="on" onclick="showTab('new')"><span>➕</span>Nuova</button>
+  <button id="btab-draft" onclick="showTab('draft')"><span>💾</span>Bozze</button>
   <button id="btab-log" onclick="showTab('log')"><span>📋</span>Registro</button>
   <button id="btab-qr" onclick="showTab('qr')"><span>🔳</span>QR avvio</button>
+</div>
+
+<!-- Gate browser -->
+<div id="browser">
+  <div class="lbox">
+    <div style="font-size:34px">🌐</div>
+    <h2>Browser non compatibile</h2>
+    <p>Per inviare la segnalazione con l'allegato serve un browser che supporti la condivisione dei file.</p>
+    <div id="browserBody"></div>
+    <p style="font-size:12px;margin-top:10px">Se sei in un'app (scanner QR, social, posta): apri il menu e scegli "Apri nel browser".</p>
+    <button class="btn sec" onclick="skipBrowser()" style="margin-top:8px">Continua comunque</button>
+  </div>
 </div>
 
 <!-- Gate accesso @futurasl.com -->
@@ -262,11 +285,32 @@ var CC  = ["andrea.bruniera@futurasl.com","matteo.fiori@futurasl.com"];
 
 var PROBLEM_TYPES = ["Pallet danneggiato","Colli danneggiati","Materiale non conforme","Etichettatura errata/mancante",
   "Prodotto sfuso / da ricontare","Pallet instabile (sicurezza)","Discrepanza quantità","Pallet ricombinato errato","Altro"];
+var TESS_URL="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
 
 /* ===== Stato ===== */
-var state = {rid:"", ts:"", dnPhotos:[], labelPhotos:[], pkgPhotos:[], types:[], sev:"", desc:"",
+var state = {rid:"", ts:"", labelPhotos:[], pkgPhotos:[], dnPhotos:[], types:[], sev:"", desc:"",
              fornitore:"", ddt:"", rif:"", vettore:"", operatore:""};
-var lastDocx=null, shareFile=null, ocrDone=false;
+var lastDocx=null, shareFile=null, ocrDone=false, dnText="", labelText="";
+
+/* ===== Controllo browser (Web Share con file) ===== */
+function shareFilesSupported(){
+  try{ return !!(navigator.canShare && navigator.canShare({files:[new File(["x"],"x.txt",{type:"text/plain"})]})); }
+  catch(e){ return false; }
+}
+function badInAppBrowser(){
+  var ua=navigator.userAgent||"";
+  return /DuckDuckGo|FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger|; wv\)/i.test(ua);
+}
+function browserOK(){ return shareFilesSupported() && !badInAppBrowser(); }
+function showBrowserGate(){
+  var ua=navigator.userAgent||"", isIOS=/iPhone|iPad|iPod/i.test(ua);
+  document.getElementById("browserBody").innerHTML = isIOS
+    ? '<p>Apri questa pagina in <b>Safari</b> (o Chrome per iPhone).</p>'
+    : '<p>Installa e apri l\'app in <b>Google Chrome</b>.</p><a class="btn" href="https://play.google.com/store/apps/details?id=com.android.chrome" target="_blank" rel="noopener">Installa Google Chrome</a>';
+  document.getElementById("browser").style.display="flex";
+}
+function skipBrowser(){ document.getElementById("browser").style.display="none"; initAuth(); }
+function initApp(){ if(browserOK()){ initAuth(); } else { showBrowserGate(); } }
 
 /* ===== Autorizzazione utenti @futurasl.com ===== */
 var AUTHKEY="authUserFutura", authEmail="";
@@ -325,12 +369,12 @@ function genRID(){
 })();
 
 /* ===== Foto ===== */
-function bindPhotos(inputId, thumbsId, countId, arr, isDoc){
+function bindPhotos(inputId, thumbsId, countId, arr, isDN){
   var input=document.getElementById(inputId), th=document.getElementById(thumbsId), c=document.getElementById(countId);
   input.addEventListener("change", function(){
     [].slice.call(input.files).forEach(function(file){
       var r=new FileReader();
-      r.onload=function(e){ arr.push({name:file.name,data:e.target.result}); render(); if(isDoc) ocrDone=false; shareFile=null; };
+      r.onload=function(e){ arr.push({name:file.name,data:e.target.result}); render(); if(isDN){ ocrDone=false; dnText=""; } shareFile=null; };
       r.readAsDataURL(file);
     });
     input.value="";
@@ -346,55 +390,91 @@ function bindPhotos(inputId, thumbsId, countId, arr, isDoc){
     c.textContent=arr.length+" foto";
   }
 }
-bindPhotos("inDN","thDN","cDN",state.dnPhotos,true);
-bindPhotos("inLabel","thLabel","cLabel",state.labelPhotos,true);
+bindPhotos("inLabel","thLabel","cLabel",state.labelPhotos,false);
 bindPhotos("inPkg","thPkg","cPkg",state.pkgPhotos,false);
+bindPhotos("inDN","thDN","cDN",state.dnPhotos,true);
 
 /* ===== Navigazione step ===== */
 function setStep(n){
   [].slice.call(document.querySelectorAll(".step")).forEach(function(el){ el.classList.toggle("hidden", +el.getAttribute("data-step")!==n); });
   [].slice.call(document.querySelectorAll(".steps .s")).forEach(function(el){
     var s=+el.getAttribute("data-s"); el.classList.toggle("done",s<n); el.classList.toggle("cur",s===n); });
-  if(n===4){ buildReview("review"); if(!ocrDone && (state.dnPhotos.length||state.labelPhotos.length) && (!val("ddt")||!val("rif")||!val("vettore"))) runOCR(true); }
+  if(n===4){ buildReview("review"); if(!ocrDone && state.dnPhotos.length && (!val("ddt")||!val("vettore"))) runOCRdn(true); }
   if(n===5){ buildReview("review2"); prebuildDocx(); }
   window.scrollTo(0,0);
 }
 function next(from){
-  if(from===1 && state.dnPhotos.length===0){ alert("La foto del Delivery Note (DDT) è obbligatoria."); return; }
+  if(from===1 && state.labelPhotos.length===0){ alert("La foto delle etichette SSCC è obbligatoria."); return; }
   if(from===3 && state.types.length===0){ if(!confirm("Nessun tipo di problema selezionato. Continuare?")) return; }
-  if(from===4 && !val("vettore")){ alert("Il Vettore è obbligatorio."); document.getElementById("vettore").focus(); return; }
+  if(from===4){
+    if(state.dnPhotos.length===0){ alert("La foto del Delivery Note è obbligatoria."); return; }
+    if(!val("ddt")){ alert("Il numero del Delivery Note è obbligatorio (leggilo dalla foto o inseriscilo)."); document.getElementById("ddt").focus(); return; }
+    if(!val("vettore")){ alert("Il Vettore è obbligatorio (leggilo dalla foto o inseriscilo)."); document.getElementById("vettore").focus(); return; }
+  }
   setStep(from+1);
 }
 function prev(from){ setStep(from-1); }
 
-/* ===== OCR DDT/SSCC dalle foto ===== */
-function runOCR(auto){
-  var st=document.getElementById("ocrStatus");
-  var imgs=state.dnPhotos.concat(state.labelPhotos);
-  if(imgs.length===0){ st.textContent="Nessuna foto disponibile: inserisci DDT/SSCC manualmente."; return; }
-  st.textContent="Lettura DDT/SSCC dalle foto in corso…";
+/* ===== OCR SSCC dalle etichette ===== */
+function runOCRsscc(){
+  var st=document.getElementById("ssccStatus");
+  if(state.labelPhotos.length===0){ st.textContent="Aggiungi una foto etichetta o usa lo scanner."; return; }
+  st.textContent="Lettura SSCC dalle foto in corso…";
   (async function(){
     try{
-      if(!window.Tesseract){ await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"); }
+      if(!window.Tesseract){ await loadScript(TESS_URL); }
       var text="";
-      for(var i=0;i<imgs.length;i++){
-        var r=await Tesseract.recognize(imgs[i].data,"eng");
-        text+=" "+(r&&r.data?r.data.text:"");
-      }
-      var up=text.toUpperCase().replace(/[OIl]/g,function(m){return m==="O"?"0":"1";});
-      var digits=text.toUpperCase();
-      var sscc=(digits.match(/\(00\)\s*([0-9]{18})/)||digits.match(/\b([0-9]{18})\b/)||up.match(/\b([0-9]{18})\b/));
-      var ddt=(digits.match(/(?:DDT|D\.?D\.?T|BOLLA|DOCUMENTO)\D{0,8}([0-9]{3,})/)||up.match(/(?:DDT|BOLLA)\D{0,8}([0-9]{3,})/));
-      var got=[];
-      var rifEl=document.getElementById("rif"), ddtEl=document.getElementById("ddt"), vetEl=document.getElementById("vettore");
-      if(sscc && !rifEl.value){ rifEl.value="(00)"+sscc[1]; state.rif=rifEl.value; document.getElementById("rifTag").textContent="✓ da foto"; got.push("SSCC"); }
-      if(ddt && !ddtEl.value){ ddtEl.value=ddt[1]; state.ddt=ddtEl.value; document.getElementById("ddtTag").textContent="✓ da foto"; got.push("DDT"); }
-      var vet=text.match(/(?:VETTORE|TRASPORTATORE|CORRIERE|SPEDIZIONIER\w*|TRASPORTO\s+A\s+MEZZO|MEZZO\s+DI\s+TRASPORTO)\s*[:\-]?\s*([A-Za-zÀ-ÿ0-9&.'\/ ]{2,40})/i);
-      if(vet && !vetEl.value){ var vv=vet[1].replace(/\s{2,}/g," ").trim().replace(/[\-:;,.]+$/,""); if(vv){ vetEl.value=vv; state.vettore=vv; document.getElementById("vetTag").textContent="✓ da bolla"; got.push("Vettore"); } }
-      st.textContent = got.length ? ("Letto da foto: "+got.join(", ")+" — verifica i valori.") : "Dati non riconosciuti automaticamente: inserisci manualmente.";
-      ocrDone=true; buildReview("review");
-    }catch(e){ st.textContent="Lettura da foto non disponibile ora: inserisci DDT/SSCC manualmente."; }
+      for(var i=0;i<state.labelPhotos.length;i++){ var r=await Tesseract.recognize(state.labelPhotos[i].data,"eng"); text+=" "+(r&&r.data?r.data.text:""); }
+      labelText=text;
+      var up=text.toUpperCase();
+      var sscc=(up.match(/\(00\)\s*([0-9]{18})/)||up.match(/\b([0-9]{18})\b/));
+      var rifEl=document.getElementById("rif");
+      if(sscc && !rifEl.value){ rifEl.value="(00)"+sscc[1]; state.rif=rifEl.value; document.getElementById("rifTag").textContent="✓ da foto"; st.textContent="SSCC letto — verifica il valore."; }
+      else if(rifEl.value){ st.textContent="SSCC già presente."; }
+      else{ st.textContent="SSCC non riconosciuto: usa lo scanner o inserisci a mano."; }
+    }catch(e){ st.textContent="Lettura non disponibile: usa lo scanner o inserisci a mano."; }
   })();
+}
+
+/* ===== OCR Delivery Note (N. DN + Vettore) ===== */
+function runOCRdn(auto){
+  var st=document.getElementById("dnStatus");
+  if(state.dnPhotos.length===0){ st.textContent="Aggiungi la foto del Delivery Note."; return; }
+  st.textContent="Lettura N. Delivery Note e Vettore in corso…";
+  (async function(){
+    try{
+      if(!window.Tesseract){ await loadScript(TESS_URL); }
+      var text="";
+      for(var i=0;i<state.dnPhotos.length;i++){ var r=await Tesseract.recognize(state.dnPhotos[i].data,"eng"); text+=" "+(r&&r.data?r.data.text:""); }
+      dnText=text;
+      if(!labelText && state.labelPhotos.length){ var lt=""; for(var j=0;j<state.labelPhotos.length;j++){ var lr=await Tesseract.recognize(state.labelPhotos[j].data,"eng"); lt+=" "+(lr&&lr.data?lr.data.text:""); } labelText=lt; }
+      var up=text.toUpperCase();
+      var ddt=(up.match(/(?:DDT|D\.?D\.?T|BOLLA|DOCUMENTO\s+DI\s+TRASPORTO|DELIVERY\s+NOTE)\D{0,12}([0-9]{3,})/)||up.match(/\bN[°º\.]?\s*([0-9]{4,})/));
+      var vet=text.match(/(?:VETTORE|TRASPORTATORE|CORRIERE|SPEDIZIONIER\w*|FREIGHT|CARRIER|TRASPORTO\s+A\s+MEZZO|MEZZO\s+DI\s+TRASPORTO)\s*[:\-]?\s*([A-Za-zÀ-ÿ0-9&.'\/ ]{2,40})/i);
+      var got=[], miss=[];
+      var ddtEl=document.getElementById("ddt"), vetEl=document.getElementById("vettore");
+      if(ddt && !ddtEl.value){ ddtEl.value=ddt[1]; state.ddt=ddtEl.value; document.getElementById("ddtTag").textContent="✓ da bolla"; got.push("N. Delivery Note"); }
+      else if(!ddtEl.value){ miss.push("N. Delivery Note"); }
+      if(vet && !vetEl.value){ var vv=vet[1].replace(/\s{2,}/g," ").trim().replace(/[\-:;,.]+$/,""); if(vv){ vetEl.value=vv; state.vettore=vv; document.getElementById("vetTag").textContent="✓ da bolla"; got.push("Vettore"); } else miss.push("Vettore"); }
+      else if(!vetEl.value){ miss.push("Vettore"); }
+      ocrDone=true; buildReview("review");
+      var msg="";
+      if(got.length) msg+="Letto da bolla: "+got.join(", ")+". ";
+      if(miss.length) msg+="Non riconosciuto: "+miss.join(", ")+" — inseriscilo a mano. ";
+      if(labelText){ msg += ssccInDN() ? "Riferimenti etichetta/Delivery Note coerenti ✓." : "⚠️ Nessun riferimento comune (DDT/articolo/pallet) tra etichetta e Delivery Note."; }
+      st.textContent = msg || "Verifica N. Delivery Note e Vettore.";
+    }catch(e){ st.textContent="Lettura non disponibile: inserisci N. Delivery Note e Vettore a mano."; }
+  })();
+}
+
+/* ===== Verifica riferimenti comuni etichetta ↔ Delivery Note (DDT / articolo / pallet) ===== */
+function refTokens(s){ var o={}; (s||"").replace(/[^0-9]/g," ").split(/\s+/).forEach(function(t){ if(t.length>=5 && t.length<=17) o[t]=1; }); return o; }
+function ssccInDN(){
+  if(!dnText || !labelText) return true; /* non verificabile: non blocco */
+  var lab=refTokens((labelText||"")+" "+(state.rif||"")), dn=refTokens((dnText||"")+" "+(state.ddt||""));
+  var lk=Object.keys(lab); if(!lk.length) return true;
+  for(var i=0;i<lk.length;i++){ if(dn[lk[i]]) return true; }
+  return false;
 }
 
 /* ===== Scanner barcode SSCC (GS1-128) ===== */
@@ -417,7 +497,8 @@ function scanSSCC(){
           var s=extractSSCC(result.getText());
           if(s){ if(navigator.vibrate) navigator.vibrate(120);
             var rifEl=document.getElementById("rif"); rifEl.value="(00)"+s; state.rif=rifEl.value;
-            document.getElementById("rifTag").textContent="✓ da barcode"; stopScan(); buildReview("review"); }
+            document.getElementById("rifTag").textContent="✓ da barcode"; document.getElementById("ssccStatus").textContent="SSCC letto dal barcode.";
+            stopScan(); }
           else { msg.textContent="Letto: "+result.getText()+" — non è un SSCC, riprova."; }
         }
       });
@@ -452,11 +533,11 @@ function pullFields(){
 function buildReview(target){
   pullFields();
   var dl=document.getElementById(target); dl.innerHTML="";
-  var rows=[["N° progressivo",state.rid],["Data/ora",state.ts],["DDT/Ordine",state.ddt||"—"],
-    ["SSCC/Rif.",state.rif||"—"],["Vettore",state.vettore||"—"],["Fornitore",state.fornitore||"—"],
+  var rows=[["N° progressivo",state.rid],["Data/ora",state.ts],["SSCC",state.rif||"—"],
+    ["N. Delivery Note",state.ddt||"—"],["Vettore",state.vettore||"—"],["Fornitore",state.fornitore||"—"],
     ["Tipo problema",state.types.join(", ")||"—"],["Gravità",state.sev||"—"],["Descrizione",state.desc||"—"],
-    ["Operatore",state.operatore||"—"],["Foto Delivery Note",state.dnPhotos.length],
-    ["Foto etichette",state.labelPhotos.length],["Foto colli",state.pkgPhotos.length]];
+    ["Operatore",state.operatore||"—"],["Foto etichette",state.labelPhotos.length],
+    ["Foto pallet",state.pkgPhotos.length],["Foto Delivery Note",state.dnPhotos.length]];
   if(target==="review2") rows.push(["A (TO)",TO.join(", ")],["CC",CC.join(", ")]);
   rows.forEach(function(r){ var dt=document.createElement("dt"),dd=document.createElement("dd");
     dt.textContent=r[0]; dd.textContent=r[1]; dl.appendChild(dt); dl.appendChild(dd); });
@@ -470,8 +551,8 @@ function buildBody(withRecip){
   L.push("");
   L.push("N° segnalazione: "+state.rid);
   L.push("Data/ora: "+state.ts);
-  L.push("DDT/Ordine: "+(state.ddt||"-"));
-  L.push("SSCC/Rif.: "+(state.rif||"-"));
+  L.push("SSCC: "+(state.rif||"-"));
+  L.push("N. Delivery Note: "+(state.ddt||"-"));
   L.push("Vettore: "+(state.vettore||"-"));
   L.push("Fornitore: "+(state.fornitore||"-"));
   L.push("Tipo problema: "+(state.types.join(", ")||"-"));
@@ -481,7 +562,7 @@ function buildBody(withRecip){
   L.push("Descrizione:");
   L.push(state.desc||"-");
   L.push("");
-  L.push("In allegato documento Word con foto Delivery Note ("+state.dnPhotos.length+"), etichette ("+state.labelPhotos.length+") e colli ("+state.pkgPhotos.length+").");
+  L.push("In allegato documento Word con foto etichette ("+state.labelPhotos.length+"), pallet ("+state.pkgPhotos.length+") e Delivery Note ("+state.dnPhotos.length+").");
   return L.join("\n");
 }
 function subjectLine(){ return "[Receiving] "+state.rid+" - "+(state.sev||"Segnalazione")+" - "+(state.fornitore||"fornitore n.d."); }
@@ -512,7 +593,7 @@ async function buildDocx(){
   var zip=new JSZip();
   var body=para("Segnalazione problema in receiving",{bold:1,size:32});
   body+=para("N° "+state.rid+"   ·   "+state.ts,{bold:1,size:22});
-  [["DDT / Ordine",state.ddt],["SSCC / Rif.",state.rif],["Vettore",state.vettore],["Fornitore",state.fornitore],
+  [["SSCC",state.rif],["N. Delivery Note",state.ddt],["Vettore",state.vettore],["Fornitore",state.fornitore],
    ["Tipo problema",state.types.join(", ")],["Gravità",state.sev],
    ["Operatore (account Futura)",state.operatore]].forEach(function(r){ body+=para(r[0]+": "+(r[1]||"-"),{}); });
   body+=para("Descrizione:",{bold:1,size:22}); body+=para(state.desc||"-",{});
@@ -526,9 +607,9 @@ async function buildDocx(){
       body+=para(title.replace("FOTO ","")+" "+(i+1),{}); body+=imgPara(id,im.w,im.h);
     }
   }
+  await addGroup("FOTO ETICHETTE SSCC",state.labelPhotos);
+  await addGroup("FOTO PALLET",state.pkgPhotos);
   await addGroup("FOTO DELIVERY NOTE",state.dnPhotos);
-  await addGroup("FOTO ETICHETTE",state.labelPhotos);
-  await addGroup("FOTO COLLI",state.pkgPhotos);
   var doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     +'<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
     +'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
@@ -549,7 +630,7 @@ async function buildDocx(){
   return zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
 }
 
-/* ===== Prepara documento in anticipo (per non perdere il gesto utente allo Share) ===== */
+/* ===== Prepara documento in anticipo ===== */
 async function prebuildDocx(){
   var btn=document.getElementById("shareBtn");
   shareFile=null;
@@ -565,7 +646,9 @@ async function prebuildDocx(){
 /* ===== Invio ===== */
 function sendShare(){
   if(!requireAuth()) return;
-  pullFields(); saveLog();
+  pullFields();
+  if(!ssccInDN()){ if(!confirm("⚠️ Nessun riferimento comune (DDT/articolo/pallet) tra etichetta e Delivery Note. Inviare comunque?")) return; }
+  saveLog();
   if(navigator.share && shareFile){
     navigator.share({title:subjectLine(), text:buildBody(true), files:[shareFile]})
       .catch(function(e){ if(e && e.name==="AbortError") return; fallbackSend(); });
@@ -577,14 +660,16 @@ async function fallbackSend(){
   var fname=state.rid+".docx";
   if(!lastDocx){ busy(true,"Preparo il documento Word…"); try{ lastDocx=await buildDocx(); }catch(e){} busy(false); }
   if(lastDocx) downloadBlob(lastDocx,fname);
-  alert("Condivisione con allegato non supportata da questo browser (es. DuckDuckGo). Apri l'app in Chrome, oppure allega il Word ("+fname+") appena scaricato.");
+  alert("Condivisione con allegato non supportata da questo browser. Apri l'app in Chrome, oppure allega il Word ("+fname+") appena scaricato.");
   var url="mailto:"+encodeURIComponent(TO.join(","))+"?cc="+encodeURIComponent(CC.join(","))
     +"&subject="+encodeURIComponent(subjectLine())+"&body="+encodeURIComponent(buildBody(false)+"\n\n[Allega il file "+fname+" appena scaricato]");
   setTimeout(function(){ window.location.href=url; },700);
 }
 function openMailtoOnly(){
   if(!requireAuth()) return;
-  pullFields(); saveLog();
+  pullFields();
+  if(!ssccInDN()){ if(!confirm("⚠️ Nessun riferimento comune (DDT/articolo/pallet) tra etichetta e Delivery Note. Inviare comunque?")) return; }
+  saveLog();
   var url="mailto:"+encodeURIComponent(TO.join(","))+"?cc="+encodeURIComponent(CC.join(","))
     +"&subject="+encodeURIComponent(subjectLine())+"&body="+encodeURIComponent(buildBody(false));
   window.location.href=url;
@@ -606,8 +691,9 @@ function saveLog(){
   if(log.some(function(r){return r.rid===state.rid;})) { renderLog(); return; }
   log.unshift({rid:state.rid,ts:state.ts,fornitore:state.fornitore,ddt:state.ddt,rif:state.rif,vettore:state.vettore,
     types:state.types,sev:state.sev,desc:state.desc,operatore:state.operatore,
-    nDN:state.dnPhotos.length,nLabel:state.labelPhotos.length,nPkg:state.pkgPhotos.length});
+    nLabel:state.labelPhotos.length,nPkg:state.pkgPhotos.length,nDN:state.dnPhotos.length});
   try{localStorage.setItem(LS,JSON.stringify(log));}catch(e){}
+  removeDraftSilent(state.rid);
   renderLog();
 }
 function renderLog(){
@@ -616,7 +702,7 @@ function renderLog(){
   var col={"Bassa":"var(--ok)","Media":"var(--warn)","Alta":"var(--accent)"};
   box.innerHTML=log.map(function(r){
     return '<div class="log-item"><div class="id">'+r.rid+'</div>'
-      +'<div class="meta">'+r.ts+' · '+(r.fornitore||"fornitore n.d.")+(r.ddt?" · DDT "+r.ddt:"")+(r.vettore?" · "+r.vettore:"")+(r.operatore?" · "+r.operatore:"")+'</div>'
+      +'<div class="meta">'+r.ts+' · '+(r.fornitore||"fornitore n.d.")+(r.ddt?" · DN "+r.ddt:"")+(r.vettore?" · "+r.vettore:"")+(r.operatore?" · "+r.operatore:"")+'</div>'
       +(r.sev?'<span class="sv" style="background:'+(col[r.sev]||"#888")+'">'+r.sev+'</span> ':'')
       +(r.types&&r.types.length?'<span style="font-size:13px">'+r.types.join(", ")+'</span>':'')
       +(r.desc?'<div style="font-size:13px;margin-top:6px;color:var(--muted)">'+r.desc+'</div>':'')
@@ -627,8 +713,8 @@ function stampFile(){ var d=new Date();
   return pad(d.getMonth()+1)+pad(d.getDate())+d.getFullYear()+" "+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds()); }
 function exportCSV(){
   var log=loadLog(); if(!log.length){ alert("Registro vuoto."); return; }
-  var head=["N_progressivo","DataOra","DDT_Ordine","SSCC_Rif","Vettore","Fornitore","TipoProblema","Gravita","Descrizione","Operatore","FotoDeliveryNote","FotoEtichette","FotoColli"];
-  var rows=log.map(function(r){ return [r.rid,r.ts,r.ddt,r.rif,r.vettore,r.fornitore,(r.types||[]).join("; "),r.sev,r.desc,r.operatore,r.nDN,r.nLabel,r.nPkg]
+  var head=["N_progressivo","DataOra","SSCC","N_DeliveryNote","Vettore","Fornitore","TipoProblema","Gravita","Descrizione","Operatore","FotoEtichette","FotoPallet","FotoDeliveryNote"];
+  var rows=log.map(function(r){ return [r.rid,r.ts,r.rif,r.ddt,r.vettore,r.fornitore,(r.types||[]).join("; "),r.sev,r.desc,r.operatore,r.nLabel,r.nPkg,r.nDN]
     .map(function(v){ v=(v==null?"":String(v)).replace(/"/g,'""'); return '"'+v+'"'; }).join(","); });
   var csv="﻿"+head.join(",")+"\n"+rows.join("\n");
   var blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
@@ -638,22 +724,83 @@ function clearLog(){ if(confirm("Svuotare tutto il registro su questo dispositiv
 
 /* ===== Reset ===== */
 function resetAll(){
-  state.dnPhotos.length=0; state.labelPhotos.length=0; state.pkgPhotos.length=0; state.types=[]; state.sev=""; state.desc=""; lastDocx=null; shareFile=null; ocrDone=false;
+  state.labelPhotos.length=0; state.pkgPhotos.length=0; state.dnPhotos.length=0; state.types=[]; state.sev=""; state.desc=""; lastDocx=null; shareFile=null; ocrDone=false; dnText="";
   ["fornitore","ddt","rif","vettore","desc"].forEach(function(id){document.getElementById(id).value="";});
   document.getElementById("operatore").value=authEmail; state.operatore=authEmail;
-  document.getElementById("thDN").innerHTML=""; document.getElementById("thLabel").innerHTML=""; document.getElementById("thPkg").innerHTML="";
-  document.getElementById("cDN").textContent="0 foto"; document.getElementById("cLabel").textContent="0 foto"; document.getElementById("cPkg").textContent="0 foto";
-  document.getElementById("ddtTag").textContent=""; document.getElementById("rifTag").textContent="";
-  document.getElementById("ocrStatus").textContent="DDT/SSCC: in attesa di lettura dalle foto.";
+  document.getElementById("thLabel").innerHTML=""; document.getElementById("thPkg").innerHTML=""; document.getElementById("thDN").innerHTML="";
+  document.getElementById("cLabel").textContent="0 foto"; document.getElementById("cPkg").textContent="0 foto"; document.getElementById("cDN").textContent="0 foto";
+  document.getElementById("ddtTag").textContent=""; document.getElementById("rifTag").textContent=""; document.getElementById("vetTag").textContent="";
+  document.getElementById("ssccStatus").textContent="SSCC: scansiona il barcode o inserisci a mano.";
+  document.getElementById("dnStatus").textContent="Aggiungi la foto del Delivery Note per la lettura automatica.";
   [].slice.call(document.querySelectorAll("#types .chip,#sev .chip")).forEach(function(x){x.classList.remove("on");});
   genRID(); setStep(1);
 }
 
+/* ===== Bozze (salva e completa dopo) ===== */
+var DKEY="receivingDrafts_v1";
+function loadDrafts(){ try{return JSON.parse(localStorage.getItem(DKEY))||[];}catch(e){return [];} }
+function saveDraft(){
+  pullFields();
+  var d={rid:state.rid,ts:state.ts,fornitore:state.fornitore,ddt:state.ddt,rif:state.rif,vettore:state.vettore,
+    types:state.types,sev:state.sev,desc:state.desc,operatore:state.operatore,
+    labelPhotos:state.labelPhotos,pkgPhotos:state.pkgPhotos,dnPhotos:state.dnPhotos,
+    labelText:labelText,dnText:dnText,savedAt:new Date().toISOString()};
+  var list=loadDrafts(), pos=-1;
+  for(var i=0;i<list.length;i++){ if(list[i].rid===d.rid){ pos=i; break; } }
+  if(pos>=0) list[pos]=d; else list.unshift(d);
+  try{ localStorage.setItem(DKEY,JSON.stringify(list)); alert("Bozza salvata. La trovi nel tab Bozze."); }
+  catch(e){ alert("Spazio insufficiente per salvare la bozza (troppe foto). Riduci le foto o invia la segnalazione."); }
+  renderDrafts();
+}
+function removeDraftSilent(rid){ var list=loadDrafts().filter(function(x){return x.rid!==rid;}); try{localStorage.setItem(DKEY,JSON.stringify(list));}catch(e){} }
+function renderDrafts(){
+  var list=loadDrafts(), box=document.getElementById("draftList");
+  if(!list.length){ box.innerHTML='<div class="empty">Nessuna bozza salvata.</div>'; return; }
+  box.innerHTML=list.map(function(r){
+    var nf=((r.labelPhotos||[]).length+(r.pkgPhotos||[]).length+(r.dnPhotos||[]).length);
+    return '<div class="log-item"><div class="id">'+r.rid+'</div>'
+      +'<div class="meta">'+r.ts+(r.fornitore?" · "+r.fornitore:"")+(r.ddt?" · DN "+r.ddt:"")+' · foto '+nf+'</div>'
+      +'<div class="row"><button class="btn sec" onclick="resumeDraft(\''+r.rid+'\')">▶️ Riprendi</button><button class="btn sec" onclick="deleteDraft(\''+r.rid+'\')">🗑 Elimina</button></div>'
+      +'</div>';
+  }).join("");
+}
+function redrawThumbs(thumbsId,countId,arr){
+  var th=document.getElementById(thumbsId), c=document.getElementById(countId);
+  th.innerHTML="";
+  arr.forEach(function(p,i){ var d=document.createElement("div"); d.className="thumb";
+    d.innerHTML='<img src="'+p.data+'"><b>&times;</b>';
+    d.querySelector("b").onclick=function(){ arr.splice(i,1); redrawThumbs(thumbsId,countId,arr); shareFile=null; };
+    th.appendChild(d); });
+  c.textContent=arr.length+" foto";
+}
+function resumeDraft(rid){
+  var list=loadDrafts(), d=null; for(var i=0;i<list.length;i++){ if(list[i].rid===rid){ d=list[i]; break; } }
+  if(!d) return;
+  state.rid=d.rid; state.ts=d.ts; state.fornitore=d.fornitore||""; state.ddt=d.ddt||""; state.rif=d.rif||"";
+  state.vettore=d.vettore||""; state.operatore=d.operatore||authEmail; state.desc=d.desc||"";
+  state.types=d.types||[]; state.sev=d.sev||"";
+  state.labelPhotos.length=0; (d.labelPhotos||[]).forEach(function(p){state.labelPhotos.push(p);});
+  state.pkgPhotos.length=0; (d.pkgPhotos||[]).forEach(function(p){state.pkgPhotos.push(p);});
+  state.dnPhotos.length=0; (d.dnPhotos||[]).forEach(function(p){state.dnPhotos.push(p);});
+  labelText=d.labelText||""; dnText=d.dnText||""; ocrDone=false; shareFile=null;
+  document.getElementById("ridLabel").textContent="N° "+state.rid;
+  document.getElementById("fornitore").value=state.fornitore; document.getElementById("ddt").value=state.ddt;
+  document.getElementById("rif").value=state.rif; document.getElementById("vettore").value=state.vettore;
+  document.getElementById("operatore").value=state.operatore; document.getElementById("desc").value=state.desc;
+  redrawThumbs("thLabel","cLabel",state.labelPhotos); redrawThumbs("thPkg","cPkg",state.pkgPhotos); redrawThumbs("thDN","cDN",state.dnPhotos);
+  [].slice.call(document.querySelectorAll("#types .chip")).forEach(function(el){ el.classList.toggle("on", state.types.indexOf(el.textContent)>=0); });
+  [].slice.call(document.querySelectorAll("#sev .chip")).forEach(function(el){ el.classList.toggle("on", el.getAttribute("data-sev")===state.sev); });
+  showTab("new"); setStep(1);
+  alert("Bozza ripresa. Completa e invia quando vuoi.");
+}
+function deleteDraft(rid){ if(!confirm("Eliminare questa bozza?")) return; removeDraftSilent(rid); renderDrafts(); }
+
 /* ===== Tabs ===== */
 function showTab(t){
-  ["new","log","qr"].forEach(function(x){
+  ["new","draft","log","qr"].forEach(function(x){
     document.getElementById("tab-"+x).classList.toggle("hidden",x!==t);
     document.getElementById("btab-"+x).classList.toggle("on",x===t); });
+  if(t==="draft") renderDrafts();
   if(t==="log") renderLog();
   if(t==="qr" && !document.getElementById("appUrl").value){ document.getElementById("appUrl").value=location.href.split("#")[0]; }
   window.scrollTo(0,0);
@@ -679,7 +826,7 @@ function makeQR(){
 
 /* ===== Avvio ===== */
 document.getElementById("loginEmail").addEventListener("keydown",function(e){ if(e.key==="Enter") tryLogin(); });
-genRID(); setStep(1); initAuth();
+genRID(); setStep(1); initApp();
 </script>
 </body>
 </html>

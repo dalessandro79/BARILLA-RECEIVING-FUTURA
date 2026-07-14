@@ -5,34 +5,42 @@ File unico HTML (`index.html`), senza installazione: si apre dal browser tramite
 
 ---
 
-## Accesso
+## Accesso e controllo browser
 
-L'app è riservata agli utenti **@futurasl.com**. All'avvio viene chiesto l'indirizzo email aziendale: si procede solo se termina con `@futurasl.com`. L'email viene registrata come **operatore** nel report e nel registro, e l'invio è bloccato senza accesso valido. L'accesso resta memorizzato sul dispositivo (link "cambia" nell'intestazione per cambiarlo).
+All'avvio l'app esegue due controlli:
 
-> Nota: è un controllo lato client, utile a evitare invii da account non autorizzati per l'uso normale, ma non è un blocco a prova di manomissione. Per un blocco reale serve un livello server (Cloudflare Access o login Microsoft 365).
+1. **Browser compatibile** — verifica che il browser supporti l'invio dell'allegato (Web Share con file). Se non compatibile (es. DuckDuckGo o browser interni a scanner/social/posta), mostra una schermata che invita a **installare/aprire Chrome** (Android) o **Safari** (iPhone). C'è "Continua comunque" per non bloccare in caso di falso allarme.
+2. **Accesso @futurasl.com** — chiede l'email aziendale; procede solo se termina con `@futurasl.com`. L'email diventa l'**operatore** nel report e nel registro; l'invio è bloccato senza accesso valido. L'accesso resta memorizzato (link "cambia" nell'intestazione).
+
+> Nota: il controllo accessi è lato client — utile a evitare invii da account non autorizzati per l'uso normale, ma non a prova di manomissione. Per un blocco reale serve un livello server (Cloudflare Access o login Microsoft 365).
 
 ---
 
 ## Flusso operativo (5 step)
 
-1. **Delivery Note + etichette** — foto del **Delivery Note (DDT)** *obbligatoria*; in più le foto delle etichette dei colli (SSCC, lotto, articolo).
-2. **Foto collo / colli** — foto dei colli interessati e del difetto.
-3. **Descrizione problema** — tipo, gravità, descrizione (testo o **dettatura vocale** in italiano).
-4. **Preparazione** — DDT e SSCC letti automaticamente dalle foto; **scanner barcode SSCC**; **Vettore** *obbligatorio* (con lettura da bolla via OCR); fornitore, operatore; riepilogo.
-5. **Conferma e invio** — il documento Word con foto e dati viene preparato in anticipo; "Invia" apre la condivisione con l'allegato già inserito.
+Il flusso rispecchia la realtà: prima le attività in **banchina**, poi il Delivery Note che si trova in **ufficio**.
+
+1. **Foto etichette SSCC** (banchina) — *obbligatoria*; scanner barcode SSCC (GS1-128) o lettura da foto.
+2. **Foto pallet / colli** (banchina).
+3. **Descrizione problema** — tipo, gravità, testo o **dettatura vocale** (it-IT).
+4. **Foto Delivery Note** (ufficio) — *obbligatoria*; l'OCR legge **N. Delivery Note** e **Vettore** dalla foto; se non riconosciuti, inserimento manuale (entrambi *obbligatori*).
+5. **Conferma e invio** — documento Word con foto allegato tramite condivisione nativa.
+
+In qualsiasi momento: **💾 Salva e completa dopo** per sospendere e riprendere in seguito (tab Bozze).
 
 ---
 
 ## Funzioni principali
 
-- **Numero progressivo** automatico per ogni segnalazione: `RCV-AAAAMMGG-HHMMSS`.
-- **Foto Delivery Note obbligatoria** (blocca l'avanzamento se mancante).
-- **Scanner barcode SSCC (GS1-128):** legge il codice a barre dell'etichetta e restituisce le 18 cifre esatte, senza errori di OCR.
-- **OCR automatico** su Delivery Note ed etichette per precompilare **DDT**, **SSCC** e **Vettore** (valori sempre verificabili e modificabili).
-- **Vettore obbligatorio:** l'invio è bloccato se il campo non è compilato.
-- **Dettatura vocale** della descrizione (dove supportata dal browser).
-- **Allegato Word automatico:** genera un `.docx` con report + foto (compresse) e lo allega all'email tramite la condivisione nativa del telefono.
-- **Registro** locale delle segnalazioni con **export CSV**.
+- **Numero progressivo** automatico: `RCV-AAAAMMGG-HHMMSS`.
+- **Foto obbligatorie**: etichette SSCC (step 1) e Delivery Note (step 4).
+- **Scanner barcode SSCC (GS1-128):** restituisce le 18 cifre esatte dall'etichetta.
+- **OCR** (Tesseract.js): SSCC dalle etichette; **N. Delivery Note** e **Vettore** dalla bolla — valori sempre verificabili e modificabili.
+- **Vettore obbligatorio** (con lettura da bolla).
+- **Controllo coerenza etichetta ↔ Delivery Note:** confronta i **riferimenti numerici comuni** (N. DDT / codice articolo / numero pallet) tra etichetta e bolla. Se non c'è alcun riferimento comune, avviso allo step 4 e richiesta di conferma prima dell'invio. Se non verificabile (OCR mancante), non blocca.
+- **Allegato Word automatico:** `.docx` con report + foto compresse (max 1280px, JPEG q0.6), preparato in anticipo e allegato via condivisione nativa.
+- **Salva bozza / completa dopo:** segnalazioni non inviate salvate sul dispositivo (tab **Bozze**), riprendibili senza perdere dati; rimosse automaticamente dopo l'invio.
+- **Registro** locale con **export CSV** (nome file con timestamp).
 - **Generatore QR** di avvio postazione (da stampare e affiggere).
 
 ---
@@ -46,50 +54,43 @@ var TO = ["Maurizio.Giugovaz@barilla.com","caterina.iannuzziello@barilla.com","c
 var CC = ["andrea.bruniera@futurasl.com","matteo.fiori@futurasl.com"];
 ```
 
-> In fase di test la lista `TO` è temporaneamente sostituita da un indirizzo interno (vedi commento nel codice): **ripristinare i destinatari Barilla prima della produzione**.
-
-Per cambiare i destinatari modificare gli array `TO` e `CC`. È anche possibile adeguare l'elenco `PROBLEM_TYPES` (tipologie di problema) e la lista delle parole chiave usate per riconoscere il Vettore in bolla.
+> **ATTENZIONE:** attualmente `TO` è in modalità **TEST** (sostituito da un indirizzo interno; vedi commento nel codice). **Ripristinare i destinatari Barilla prima della produzione.**
 
 ---
 
 ## Pubblicazione (GitHub Pages)
 
-1. Repository: **BARILLA-RECEIVING-FUTURA**, file pubblicato come **`index.html`**.
+1. Repository **BARILLA-RECEIVING-FUTURA**, file pubblicato come **`index.html`**.
 2. **Settings → Pages → Deploy from a branch**: branch `main`, cartella `/ (root)`.
 3. URL pubblico: `https://dalessandro79.github.io/BARILLA-RECEIVING-FUTURA/`.
-4. Per aggiornare l'app: caricare il nuovo `index.html` (**Add file → Upload files**, sovrascrivi, **Commit**). La pubblicazione si aggiorna in ~1 minuto; sul telefono può servire un refresh forzato.
+4. Per aggiornare: caricare il nuovo `index.html` (**Add file → Upload files**, sovrascrivi, **Commit**). La pubblicazione si aggiorna in ~1 minuto; sul telefono può servire un refresh forzato.
 
-**Requisito:** l'app va servita in **HTTPS** (fotocamera, scanner, dettatura e download lo richiedono). SharePoint/OneDrive Business non esegue l'HTML: usarli solo come archivio, non come host di avvio.
+**Requisito:** l'app va servita in **HTTPS** (fotocamera, scanner, dettatura e download lo richiedono). SharePoint/OneDrive Business non esegue l'HTML: usarli solo come archivio.
 
 ---
 
 ## Requisiti d'uso (mobile)
 
-- **Browser consigliato: Chrome** su Android. DuckDuckGo e alcuni browser interni (scanner QR, Outlook, SharePoint) **non supportano l'allegato automatico** (condivisione file): in quel caso l'app scarica il Word e chiede di allegarlo a mano.
+- **Browser: Chrome** su Android, **Safari** su iPhone. Browser interni/DuckDuckGo non supportano l'allegato automatico.
 - Al primo utilizzo, **scanner barcode** e **OCR** scaricano le librerie dal web: serve connessione. L'app resta usabile anche se non riescono (inserimento manuale).
-- Concedere i permessi **fotocamera** (foto/scanner) e **microfono** (dettatura).
+- Concedere i permessi **fotocamera** e **microfono**.
 
 ---
 
-## Generazione del QR di avvio
+## Registro e bozze
 
-Nell'app: scheda **QR avvio** → inserire l'URL di pubblicazione → **Genera QR** → **Stampa**. Affiggere il QR in postazione di ricevimento.
-
----
-
-## Registro e CSV
-
-- Ogni segnalazione confermata viene salvata **localmente** sul dispositivo (browser).
-- Export dal tab **Registro → Esporta CSV**; il nome file include il timestamp: `registro_segnalazioni MMGGAAAA HHMMSS.csv`.
-- Il registro è per dispositivo/browser: non è condiviso tra utenti. Cancellando i dati del browser si svuota il registro.
+- **Registro**: ogni segnalazione inviata è salvata localmente; export **CSV** (`registro_segnalazioni MMGGAAAA HHMMSS.csv`).
+- **Bozze**: segnalazioni non ancora inviate, con foto e dati; per dispositivo/browser.
+- Dati per dispositivo, non condivisi tra utenti. Cancellando i dati del browser si svuotano registro e bozze.
 
 ---
 
 ## Limiti noti
 
-- **Destinatari nell'invio via condivisione:** l'allegato parte automaticamente, ma alcune app di posta non precompilano TO/CC dalla condivisione nativa (gli indirizzi sono comunque riportati nel corpo). Per un invio completamente automatico (destinatari + allegato + invio) serve un livello server (es. Power Automate / Microsoft 365).
-- **OCR del Vettore:** dipende da come è scritta la bolla; verificare sempre il valore.
-- **Controllo accessi:** lato client, non a prova di manomissione (vedi sezione Accesso).
+- **Destinatari nell'invio via condivisione:** l'allegato parte, ma alcune app di posta non precompilano TO/CC (indirizzi comunque riportati nel corpo). Per un invio completamente automatico serve un livello server (Power Automate / Microsoft 365 Graph).
+- **OCR:** affidabilità dipendente da qualità foto e layout bolla; verificare sempre i valori.
+- **Controllo accessi:** lato client, non a prova di manomissione.
+- **localStorage:** bozze con molte foto possono saturare lo spazio del browser.
 
 ---
 
